@@ -1,0 +1,41 @@
+{
+  "classic_menu": [
+    {
+      "platter_name": "new_platter_1",
+      "ingridients": [
+        {
+          "name": "рис",
+          "quantity": 100,
+          "measure": "грамм"
+        },
+        {
+          "name": "говядина",
+          "quantity": 100,
+          "measure": "грамм"
+        },
+        {
+          "name": "макароны",
+          "quantity": 100,
+          "measure": "грамм"
+        }
+      ],
+      "cooking_plan": ["do_1", "do_2", "do_3"],
+      "description": "blah-blah",
+      "kkal": 1000,
+      "img_url": "",
+      "meals": "breakfast"
+    },
+    {
+      "platter_name": "new_platter_2",
+      "ingridients": ["рис", "говядина", "макароны"],
+      "cooking_plan": ["do_1", "do_2", "do_3"],
+      "description": "blah-blah",
+      "kkal": 1000,
+      "img_url": "",
+      "meals": "lunch"
+    }
+  ],
+  "low_carbs": "",
+  "vegetarian": "",
+  "keto": ""
+}
