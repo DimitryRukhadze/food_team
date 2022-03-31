@@ -2,10 +2,10 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 
-from find_subscription import get_subscriptions, get_json_content, present_subscriptions
+from find_subscription import get_subscriptions, get_json_content, present_subscriptions, get_recipe
 from time import sleep
 
 
@@ -45,7 +45,7 @@ def start(update: Update, context: CallbackContext) -> None:
 
 def help_command(update: Update, context: CallbackContext) -> None:
     """Displays info on how to use the bot."""
-    update.message.reply_text("Use /start to test this bot.")
+    update.message.reply_text("Use /start to test this bot")
 
 
 def main_button(update: Update, context: CallbackContext) -> None:
@@ -73,6 +73,16 @@ def main_button(update: Update, context: CallbackContext) -> None:
         query.edit_message_text(text=f"Оформляем подписку")
 
 
+def get_meal(update: Update, context: CallbackContext) -> None:
+    text, image = get_recipe()
+    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
+    with open(image, "rb") as photo:
+        update.message.reply_photo(photo)
+    update.message.reply_markdown_v2(text)
+    # update.message.reply_text(text)
+    
+
+
 def main() -> None:
     load_dotenv()
     """Start the bot."""
@@ -83,6 +93,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CallbackQueryHandler(main_button))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("meal", get_meal))
 
     updater.start_polling()
 
