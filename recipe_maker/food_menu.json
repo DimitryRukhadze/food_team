@@ -1,1 +1,96 @@
-[{"id": 0, "name": "", "description": "", "img_url": "", "cousine_type": "FROM_PREDEFINED_SET", "contains": ["FROM_PREDEFINED_SET"], "calories": 0, "steps": [{"title": "", "text": ""}], "ingredients": [{"name": "", "countable": true, "amount": 1, "units": "FROM_PREDEFINED_SET"}, {"name": "", "countable": false}]}, {"id": 0, "name": "", "description": "", "img_url": "", "cousine_type": "FROM_PREDEFINED_SET", "contains": ["FROM_PREDEFINED_SET"], "calories": 0, "steps": [{"title": "", "text": ""}], "ingredients": [{"name": "", "countable": true, "amount": 1, "units": "FROM_PREDEFINED_SET"}, {"name": "", "countable": false}]}, {"name": "bulka"}]
+[
+    {
+        "name": "Тестовый рецепт 1",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        "img_url": "images/1.png",
+        "cousine_type": "Классическое",
+        "contains": ["Мясо", "Зерновые"],
+        "calories": 420,
+        "steps":[
+            {
+                "num": 0,
+                "title": "Заголовок шага 1",
+                "text": "Описание шага 1"
+            },
+            {
+                "num": 1,
+                "title": "Заголовок шага 2",
+                "text": "Описание шага 2"
+            }
+        ],
+        "ingredients":[
+            {
+                "pos": 0,
+                "name": "Ингредиент 1",
+                "countable": true,
+                "amount": 500,
+                "units": "г"
+            },
+            {
+                "pos": 1,
+                "name": "Ингредиент 2",
+                "countable": true,
+                "amount": 1,
+                "units": "шт"
+            },
+            {
+                "pos": 2,
+                "name": "Ингредиент 3",
+                "countable": false
+            }
+        ]
+    },
+    {
+        "name": "Тестовый рецепт 2",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        "img_url": "images/2.png",
+        "cousine_type": "Кето",
+        "contains": ["Молочные продукты", "Зерновые", "Продукты пчеловодства"],
+        "calories": 420,
+        "steps":[
+            {
+                "num": 0,
+                "title": "Заголовок шага 1",
+                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+            },
+            {
+                "num": 1,
+                "title": "Заголовок шага 2",
+                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+            },
+            {
+                "num": 2,
+                "title": "Заголовок шага 3",
+                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+            }
+        ],
+        "ingredients":[
+            {
+                "pos": 0,
+                "name": "Ингредиент 1",
+                "countable": true,
+                "amount": 1,
+                "units": "кг"
+            },
+            {
+                "pos": 1,
+                "name": "Ингредиент 2",
+                "countable": true,
+                "amount": 2,
+                "units": "л"
+            },
+            {
+                "pos": 2,
+                "name": "Ингредиент 3",
+                "countable": true,
+                "amount": 3,
+                "units": "шт"
+            },
+            {
+                "pos": 2,
+                "name": "Ингредиент 4",
+                "countable": false
+            }
+        ]
+    }
+]
