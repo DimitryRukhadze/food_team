@@ -1,10 +1,9 @@
 import logging
 import os
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler, ConversationHandler
-
 from find_subscription import get_subscriptions, get_json_content, present_subscriptions, get_recipe
 from time import sleep
 
@@ -16,7 +15,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-FIRST = range(1)
+FIRST, SECOND, THIRD, FOURTH = range(4)
 
 MY_SUBSCRIPTIONS, SUBSCRIBE = range(2)
 
@@ -61,12 +60,17 @@ def subscribe(update, context):
     chat_id = update.effective_chat.id
     menu_types = ['classic', 'vegetarian', 'keto', 'low_carbs']
     menu_types_markup = customize_menu(menu_types)
+
     context.bot.send_message(
         chat_id=chat_id,
         text='Выберите тип меню',
         reply_markup=menu_types_markup
     )
 
+    return SECOND
+
+def get_persons_number(update, context):
+    chat_id = update.effective_chat.id
     num_of_persons = [x for x in range(1, 7)]
     persons_markup = customize_menu(num_of_persons)
     context.bot.send_message(
@@ -75,6 +79,11 @@ def subscribe(update, context):
         reply_markup=persons_markup
     )
 
+    return THIRD
+
+
+def get_meals_number(update, context):
+    chat_id = update.effective_chat.id
     num_of_meals = [x for x in range(1,7)]
     num_of_meals_markup = customize_menu(num_of_meals)
     context.bot.send_message(
@@ -82,6 +91,9 @@ def subscribe(update, context):
         text='Сколько приёмов пищи?',
         reply_markup=num_of_meals_markup
     )
+
+    return FOURTH
+
 
 def customize_menu(menu_names):
     if not len(menu_names)%2:
@@ -121,7 +133,9 @@ if __name__ == "__main__":
             FIRST: [
                 CallbackQueryHandler(show_subscriptions, pattern='^' + str(MY_SUBSCRIPTIONS) + '$'),
                 CallbackQueryHandler(subscribe, pattern='^' + str(SUBSCRIBE) + '$')
-            ]
+            ],
+            SECOND:[CallbackQueryHandler(get_persons_number)],
+            THIRD:[CallbackQueryHandler(get_meals_number)],
         },
         fallbacks=[CommandHandler('start', start)]
     )
