@@ -56,7 +56,7 @@ def show_subscriptions(update, context) -> None:
         query.edit_message_text(text="Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.")
 
 
-def subscribe(update, context):
+def get_menu_type(update, context):
     chat_id = update.effective_chat.id
     menu_types = ['classic', 'vegetarian', 'keto', 'low_carbs']
     menu_types_markup = customize_menu(menu_types)
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         states={
             FIRST: [
                 CallbackQueryHandler(show_subscriptions, pattern='^' + str(MY_SUBSCRIPTIONS) + '$'),
-                CallbackQueryHandler(subscribe, pattern='^' + str(SUBSCRIBE) + '$')
+                CallbackQueryHandler(get_menu_type, pattern='^' + str(SUBSCRIBE) + '$')
             ],
             SECOND:[CallbackQueryHandler(get_persons_number)],
             THIRD:[CallbackQueryHandler(get_meals_number)],
