@@ -63,8 +63,10 @@ def get_user_api(chat_id):
 
     return response.json()['id']
 
+
 def main():
     pass
+
 
 if __name__ == "__main__":
     main()
