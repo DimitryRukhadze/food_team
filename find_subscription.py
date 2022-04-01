@@ -1,4 +1,7 @@
 import json
+from datetime import datetime
+
+import pytz
 
 def get_json_content(json_file):
     """ Читает json файлы, возвращает содержимое """
@@ -18,11 +21,13 @@ def get_subscriptions(user_id, subs):
 
 def present_subscriptions(user_subs):
     pretty_view = []
+    tz = pytz.timezone('Europe/Moscow')
     for sub in user_subs:
+        expiration_date = datetime.fromtimestamp(sub["expires_on"], tz)
         view = {
             "Номер подписки": sub["id"],
-            "Название подписки": sub["cousine_type"],
-            "Действует до": sub["expires_on"]
+            "Тип меню": sub["cousine_type"],
+            "Действует до": expiration_date
             }
         pretty_view.append(view)
     return pretty_view
