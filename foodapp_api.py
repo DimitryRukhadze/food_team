@@ -1,7 +1,7 @@
 import requests
 
 
-def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_servings):
+def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_servings, plan):
     url = 'http://127.0.0.1:5000/api/addSubscription'
     headers = {'Content-Type': 'application/json'}
     json_data = {
@@ -10,7 +10,8 @@ def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_serv
         'cousine_type': cousine_type,
         'allergies': allergies,
         'num_persons': num_persons,
-        'num_servings': num_servings
+        'num_servings': num_servings,
+        'plan': plan
     }
 
     response = requests.post(url, headers=headers, json=json_data)
