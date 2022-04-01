@@ -35,7 +35,7 @@ def start(update, context):
 
 
 def show_subscriptions(update, context) -> None:
-
+    chat_id = update.effective_chat.id
     query = update.callback_query
     user = update.effective_user
     user_id = user.id
@@ -51,7 +51,7 @@ def show_subscriptions(update, context) -> None:
         view = present_subscriptions(user_subscriptions)
         for sub in view:
             result = ', '.join([f'{key}: {value}' for key, value in sub.items()])
-            query.edit_message_text(text=result)
+            context.bot.send_message(chat_id=chat_id, text=result)
 
     else:
         query.edit_message_text(text="Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.")
