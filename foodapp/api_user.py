@@ -1,9 +1,10 @@
+import random
 import time
 from datetime import datetime, timedelta
 from flask import Blueprint
 from tinydb import Query
 
-from foodapp.db import get_database, test_get_sample_recipe, Schema, FIELD_LISTS
+from foodapp.db import get_database, Schema, FIELD_LISTS
 from webargs import fields
 from webargs.flaskparser import use_args
 
@@ -94,17 +95,34 @@ def get_user_subscriptions_api(args):
     db = get_database()
     subs = db.table(Schema.SUBSCRIPTION.name)
     user_subs = subs.search(Query()['chat_id'] == args['chat_id'])
-
-    return {'subscriptions': user_subs}
+    for user_sub in user_subs:
+        user_sub['id'] = user_sub.doc_id
+    return {'subs': user_subs}
 
 
 get_recipe_args = {
     'bot_token': fields.Str(required=True),
-    'subscription_id': fields.Int(required=True)
+    'sub_id': fields.Int(required=True)
 }
 
 
-@user_bp.route('/recipe', methods=['POST'])
+@user_bp.route('/getRecipe', methods=['POST'])
 @use_args(get_recipe_args)
 def get_recipe_api(args):
-    return test_get_sample_recipe()
+    db = get_database()
+    subs = db.table(Schema.SUBSCRIPTION.name)
+    sub = subs.get(doc_id=args['sub_id'])
+
+    if not sub:
+        return {'recipe': -1}
+
+    recipe_table = db.table(Schema.RECIPE.name)
+    Recipe = Query()
+    recipes = recipe_table.search(
+        (Recipe.cousine_type == sub['cousine_type'])
+        & (~ (Recipe.contains.any(sub['allergies'])))
+        )
+
+    result = random.choice(recipes)
+
+    return {'recipe': result if result else -1}
