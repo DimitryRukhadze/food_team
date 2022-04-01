@@ -4,8 +4,12 @@ import os
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler, ConversationHandler
+from tinydb import Query
 from find_subscription import get_subscriptions, get_json_content, present_subscriptions, get_recipe
 from time import sleep
+
+
+import foodapp_api
 
 
 # Enable logging
@@ -39,12 +43,16 @@ def show_subscriptions(update, context) -> None:
     user = update.effective_user
     user_id = user.id
 
-    json_content = get_json_content("subscriptions.json")
+    # json_content = get_json_content("subscriptions.json")
 
-    user_subscriptions = get_subscriptions(
-        user_id,
-        json_content
-    )
+    # user_subscriptions = get_subscriptions(
+    #     user_id,
+    #     json_content
+    # ):
+    try:
+        user_subscriptions = foodapp_api.get_subscriptions_api(chat_id)
+    except Exception:
+        user_subscriptions = []
 
     if user_subscriptions:
         view = present_subscriptions(user_subscriptions)
@@ -58,8 +66,10 @@ def show_subscriptions(update, context) -> None:
 
 def subscribe(update, context):
     chat_id = update.effective_chat.id
-    menu_types = ['classic', 'vegetarian', 'keto', 'low_carbs']
-    menu_types_markup = customize_menu(menu_types)
+
+    api_field = 'cousine_type'
+    menu_types = ['Классическое', 'Вегетарианское', 'Кето', 'Низкоуглеводное']    
+    menu_types_markup = customize_menu(api_field, menu_types)
 
     context.bot.send_message(
         chat_id=chat_id,
@@ -70,9 +80,15 @@ def subscribe(update, context):
     return SECOND
 
 def get_persons_number(update, context):
+    key, value = update.callback_query.data.split(':')
+    context.user_data[key] = value
+    
     chat_id = update.effective_chat.id
+
+    api_field = 'num_persons'
     num_of_persons = [x for x in range(1, 7)]
-    persons_markup = customize_menu(num_of_persons)
+
+    persons_markup = customize_menu(api_field, num_of_persons)
     context.bot.send_message(
         chat_id=chat_id,
         text='На сколько человек будете готовить?',
@@ -83,9 +99,14 @@ def get_persons_number(update, context):
 
 
 def get_meals_number(update, context):
+    key, value = update.callback_query.data.split(':')
+    context.user_data[key] = value
+
     chat_id = update.effective_chat.id
+
+    api_field = 'num_servings'
     num_of_meals = [x for x in range(1,7)]
-    num_of_meals_markup = customize_menu(num_of_meals)
+    num_of_meals_markup = customize_menu(api_field, num_of_meals)
     context.bot.send_message(
         chat_id=chat_id,
         text='Сколько приёмов пищи?',
@@ -95,14 +116,44 @@ def get_meals_number(update, context):
     return FOURTH
 
 
-def customize_menu(menu_names):
+def query_subscription(update, context):
+    key, value = update.callback_query.data.split(':')
+    context.user_data[key] = value
+
+    chat_id = update.effective_chat.id
+
+    try:
+        new_subscription = foodapp_api.add_subscription_api(
+            chat_id=chat_id,
+            cousine_type=context.user_data['cousine_type'],
+            num_persons=int(context.user_data['num_persons']),
+            num_servings=int(context.user_data['num_servings']),
+            allergies=[]
+        )
+    except Exception:
+        new_subscription = None
+
+    if new_subscription:
+        text = 'Отлично! Ваша подписка создана!'
+    else:
+        text = 'Что-то пошло не так... попробуйте повторить попытку позже!'
+
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text
+    )
+
+    return ConversationHandler.END
+
+
+def customize_menu(field, menu_names):
     if not len(menu_names)%2:
         cols = 2
     else:
         cols = 3
 
     menu_buttons = [
-        InlineKeyboardButton(type, callback_data=type)
+        InlineKeyboardButton(type, callback_data=f'{field}:{type}')
         for type in menu_names
     ]
 
@@ -136,6 +187,7 @@ if __name__ == "__main__":
             ],
             SECOND:[CallbackQueryHandler(get_persons_number)],
             THIRD:[CallbackQueryHandler(get_meals_number)],
+            FOURTH:[CallbackQueryHandler(query_subscription)]
         },
         fallbacks=[CommandHandler('start', start)]
     )
