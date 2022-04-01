@@ -43,12 +43,6 @@ def show_subscriptions(update, context) -> None:
     user = update.effective_user
     user_id = user.id
 
-    # json_content = get_json_content("subscriptions.json")
-
-    # user_subscriptions = get_subscriptions(
-    #     user_id,
-    #     json_content
-    # ):
     try:
         user_subscriptions = foodapp_api.get_subscriptions_api(chat_id)
     except Exception:
@@ -71,11 +65,14 @@ def get_menu_type(update, context):
     menu_types = ['Классическое', 'Вегетарианское', 'Кето', 'Низкоуглеводное']    
     menu_types_markup = customize_menu(api_field, menu_types)
 
-    context.bot.send_message(
-        chat_id=chat_id,
-        text='Выберите тип меню',
-        reply_markup=menu_types_markup
-    )
+    # context.bot.send_message(
+    #     chat_id=chat_id,
+    #     text='Выберите тип меню',
+    #     reply_markup=menu_types_markup
+    # )
+
+    update.callback_query.edit_message_text(text='Выберите тип меню')
+    update.callback_query.edit_message_reply_markup(reply_markup=menu_types_markup)
 
     return SECOND
 
@@ -89,11 +86,14 @@ def get_persons_number(update, context):
     num_of_persons = [x for x in range(1, 7)]
 
     persons_markup = customize_menu(api_field, num_of_persons)
-    context.bot.send_message(
-        chat_id=chat_id,
-        text='На сколько человек будете готовить?',
-        reply_markup=persons_markup
-    )
+    # context.bot.send_message(
+    #     chat_id=chat_id,
+    #     text='На сколько человек будете готовить?',
+    #     reply_markup=persons_markup
+    # )
+
+    update.callback_query.edit_message_text(text='На сколько человек будете готовить?')
+    update.callback_query.edit_message_reply_markup(reply_markup=persons_markup)
 
     return THIRD
 
@@ -107,11 +107,14 @@ def get_meals_number(update, context):
     api_field = 'num_servings'
     num_of_meals = [x for x in range(1,7)]
     num_of_meals_markup = customize_menu(api_field, num_of_meals)
-    context.bot.send_message(
-        chat_id=chat_id,
-        text='Сколько приёмов пищи?',
-        reply_markup=num_of_meals_markup
-    )
+    # context.bot.send_message(
+    #     chat_id=chat_id,
+    #     text='Сколько приёмов пищи?',
+    #     reply_markup=num_of_meals_markup
+    # )
+
+    update.callback_query.edit_message_text(text='Сколько приёмов пищи?')
+    update.callback_query.edit_message_reply_markup(reply_markup=num_of_meals_markup)
 
     return FOURTH
 
@@ -135,10 +138,12 @@ def query_subscription(update, context):
         new_subscription = None
 
     if new_subscription:
-        text = 'Отлично! Ваша подписка создана!\n Вы можете вернуться в главное меню командой /start'
+        text = 'Отлично! Ваша подписка создана!\nВы можете вернуться в главное меню командой /start'
     else:
-        text = 'Что-то пошло не так... попробуйте повторить попытку позже!\n Вы можете вернуться в главное меню командой /start'
+        text = 'Что-то пошло не так... попробуйте повторить попытку позже!\nВы можете вернуться в главное меню командой /start'
 
+    update.callback_query.delete_message()
+    
     context.bot.send_message(
         chat_id=chat_id,
         text=text
