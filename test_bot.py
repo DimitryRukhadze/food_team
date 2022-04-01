@@ -128,15 +128,16 @@ def query_subscription(update, context):
             cousine_type=context.user_data['cousine_type'],
             num_persons=int(context.user_data['num_persons']),
             num_servings=int(context.user_data['num_servings']),
-            allergies=[]
+            allergies=[],
+            plan=12
         )
     except Exception:
         new_subscription = None
 
     if new_subscription:
-        text = 'Отлично! Ваша подписка создана!'
+        text = 'Отлично! Ваша подписка создана!\n Вы можете вернуться в главное меню командой /start'
     else:
-        text = 'Что-то пошло не так... попробуйте повторить попытку позже!'
+        text = 'Что-то пошло не так... попробуйте повторить попытку позже!\n Вы можете вернуться в главное меню командой /start'
 
     context.bot.send_message(
         chat_id=chat_id,
