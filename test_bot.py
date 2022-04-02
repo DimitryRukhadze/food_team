@@ -161,7 +161,7 @@ def get_allergies(update: Update, context: CallbackContext):
     ]
     allergy_types = [t for t in allergy_types_base if t not in context.user_data['allergies']]
 
-    allergy_types_markup = customize_menu(api_field, allergy_types)
+    allergy_types_markup = customize_menu(api_field, allergy_types, cols=1)
     allergies_chosen = ', '.join(context.user_data['allergies']) if context.user_data["allergies"] else 'нет'
     text = (
         f'Тип меню: {context.user_data["cousine_type"]}\n'
@@ -214,10 +214,10 @@ def query_subscription(update, context):
     return ConversationHandler.END
 
 
-def customize_menu(field, menu_names):
-    if not len(menu_names)%2:
+def customize_menu(field, menu_names, cols=''):
+    if not cols and not len(menu_names)%2:
         cols = 2
-    else:
+    elif not cols:
         cols = 3
 
     menu_buttons = [
