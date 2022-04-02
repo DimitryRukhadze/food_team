@@ -19,7 +19,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-FIRST, SECOND, THIRD, FOURTH = range(4)
+FIRST, SECOND, THIRD, FOURTH, FIFTH = range(5)
 
 MY_SUBSCRIPTIONS, SUBSCRIBE = range(2)
 
@@ -65,14 +65,13 @@ def get_menu_type(update, context):
     menu_types = ['Классическое', 'Вегетарианское', 'Кето', 'Низкоуглеводное']    
     menu_types_markup = customize_menu(api_field, menu_types)
 
-    # context.bot.send_message(
-    #     chat_id=chat_id,
-    #     text='Выберите тип меню',
-    #     reply_markup=menu_types_markup
-    # )
 
-    update.callback_query.edit_message_text(text='Выберите тип меню')
-    update.callback_query.edit_message_reply_markup(reply_markup=menu_types_markup)
+    update.callback_query.delete_message()
+    context.bot.send_message(
+        chat_id=chat_id,
+        text='Выберите тип меню:',
+        reply_markup=menu_types_markup
+    )
 
     return SECOND
 
@@ -86,14 +85,19 @@ def get_persons_number(update, context):
     num_of_persons = [x for x in range(1, 7)]
 
     persons_markup = customize_menu(api_field, num_of_persons)
-    # context.bot.send_message(
-    #     chat_id=chat_id,
-    #     text='На сколько человек будете готовить?',
-    #     reply_markup=persons_markup
-    # )
+    text = (
+        f'Тип меню: {context.user_data["cousine_type"]}\n'
+        f'Количество персон: \n'
+        f'\n'
+        f'На сколько человек будете готовить?'
+    )
 
-    update.callback_query.edit_message_text(text='На сколько человек будете готовить?')
-    update.callback_query.edit_message_reply_markup(reply_markup=persons_markup)
+    update.callback_query.delete_message()
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=persons_markup
+    )
 
     return THIRD
 
@@ -107,31 +111,87 @@ def get_meals_number(update, context):
     api_field = 'num_servings'
     num_of_meals = [x for x in range(1,7)]
     num_of_meals_markup = customize_menu(api_field, num_of_meals)
-    # context.bot.send_message(
-    #     chat_id=chat_id,
-    #     text='Сколько приёмов пищи?',
-    #     reply_markup=num_of_meals_markup
-    # )
 
-    update.callback_query.edit_message_text(text='Сколько приёмов пищи?')
-    update.callback_query.edit_message_reply_markup(reply_markup=num_of_meals_markup)
+    text = (
+        f'Тип меню: {context.user_data["cousine_type"]}\n'
+        f'Количество персон: {context.user_data["num_persons"]}\n'
+        f'Количество порций:\n'
+        f'\n'
+        f'Сколько приёмов пищи?'
+    )
+    update.callback_query.delete_message()
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=num_of_meals_markup
+    )
+
+    return FOURTH
+
+
+def get_allergies(update: Update, context: CallbackContext):
+    key, value = update.callback_query.data.split(':')
+
+    if not context.user_data.get('loop'):
+        # Save user input from previous step and mark for looping
+        context.user_data[key] = value
+        context.user_data['allergies'] = []
+        context.user_data['loop'] = True
+        context.user_data['loop_escape'] = 'Продолжить'
+    elif value == context.user_data['loop_escape']:
+        del context.user_data['loop']
+        del context.user_data['loop_escape']
+        
+        return FIFTH
+
+    else:
+        context.user_data['allergies'].append(value)
+
+    api_field = 'allergies'
+    allergy_types_base = [
+        'Рыба и морепродукты',
+        'Мясо',
+        'Зерновые',
+        'Продукты пчеловодства',
+        'Орехи и бобовые',
+        'Молочные продукты',
+        'Продолжить'
+    ]
+    allergy_types = [t for t in allergy_types_base if t not in context.user_data['allergies']]
+
+    allergy_types_markup = customize_menu(api_field, allergy_types)
+    allergies_chosen = ', '.join(context.user_data['allergies']) if context.user_data["allergies"] else 'нет'
+    text = (
+        f'Тип меню: {context.user_data["cousine_type"]}\n'
+        f'Количество персон: {context.user_data["num_persons"]}\n'
+        f'Количество порций: {context.user_data["num_servings"]}\n'
+        f'Выбранные аллергии: {allergies_chosen}\n'
+        f'\n'
+        f'Выберите аллергии или нажмите продолжить:'
+    )
+
+    update.callback_query.delete_message()
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=text,
+        reply_markup=allergy_types_markup
+    )
 
     return FOURTH
 
 
 def query_subscription(update, context):
-    key, value = update.callback_query.data.split(':')
-    context.user_data[key] = value
+    print(context.user_data)
 
     chat_id = update.effective_chat.id
-
+    new_subscription = None
     try:
         new_subscription = foodapp_api.add_subscription_api(
             chat_id=chat_id,
             cousine_type=context.user_data['cousine_type'],
             num_persons=int(context.user_data['num_persons']),
             num_servings=int(context.user_data['num_servings']),
-            allergies=[],
+            allergies=context.user_data['allergies'],
             plan=12
         )
     except Exception:
@@ -193,7 +253,8 @@ if __name__ == "__main__":
             ],
             SECOND:[CallbackQueryHandler(get_persons_number)],
             THIRD:[CallbackQueryHandler(get_meals_number)],
-            FOURTH:[CallbackQueryHandler(query_subscription)]
+            FOURTH:[CallbackQueryHandler(get_allergies)],
+            FIFTH:[CallbackQueryHandler(query_subscription)]
         },
         fallbacks=[CommandHandler('start', start)]
     )
