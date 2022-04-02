@@ -142,6 +142,8 @@ def get_allergies(update: Update, context: CallbackContext):
         del context.user_data['loop']
         del context.user_data['loop_escape']
         
+        query_subscription(update, context)
+
         return FIFTH
 
     else:
@@ -239,7 +241,6 @@ def build_menu(buttons, n_cols):
 
 
 if __name__ == "__main__":
-
     load_dotenv()
     updater = Updater(os.getenv("TG_TOKEN"))
 
