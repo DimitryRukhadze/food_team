@@ -3,8 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from telegram import (
-    KeyboardButton, LabeledPrice, ReplyKeyboardMarkup, Update, 
-    InlineKeyboardButton, InlineKeyboardMarkup, 
+    KeyboardButton, LabeledPrice, ReplyKeyboardMarkup, Update,
     )
 from telegram.ext import (
     Updater, CommandHandler, CallbackContext, 
@@ -83,8 +82,6 @@ def start(update: Update, context: CallbackContext):
 def show_subscriptions(update, context) -> None:
     chat_id = update.effective_chat.id
     query = update.callback_query
-    user = update.effective_user
-    user_id = user.id
 
     try:
         user_subscriptions = foodapp_api.get_subscriptions_api(chat_id)
@@ -92,10 +89,13 @@ def show_subscriptions(update, context) -> None:
         user_subscriptions = []
 
     if user_subscriptions:
-        view = present_subscriptions(user_subscriptions)
-        for sub in view:
-            result = ', '.join([f'{key}: {value}' for key, value in sub.items()])
-            context.bot.send_message(chat_id=chat_id, text=result)
+        [print(sub) for sub in user_subscriptions]
+        sub_buttons = [
+            f"{sub['cousine_type']}, {sub['num_servings']} блюд на {sub['num_persons']} человек"
+            for sub in user_subscriptions
+        ]
+        sub_markups = customize_menu_2(sub_buttons, cols=1)
+        query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ', reply_markup=sub_markups)
 
     else:
         query.edit_message_text(text="Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.")

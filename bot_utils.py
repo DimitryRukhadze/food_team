@@ -39,6 +39,19 @@ def customize_menu(field, menu_names, cols=''):
 
     return reply_markup
 
+def customize_menu_2(menu_names, cols=''):
+    if not len(menu_names)%2:
+        cols = 2
+    else:
+        cols = 3
+    menu_buttons = [
+        InlineKeyboardButton(type, callback_data=type)
+        for type in menu_names
+    ]
+    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=cols))
+
+    return reply_markup
+
 
 def build_menu(buttons, n_cols):
     menu = [
