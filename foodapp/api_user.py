@@ -1,10 +1,11 @@
 import random
+from re import sub
 import time
 from datetime import datetime, timedelta
 from flask import Blueprint
 from tinydb import Query
 
-from foodapp.db import get_database, Schema, REFERENCE
+from foodapp.db import *
 from webargs import fields
 from webargs.flaskparser import use_args
 
@@ -25,7 +26,7 @@ new_user_args = {
 @use_args(new_user_args)
 def register_user_api(args):
     db = get_database()
-    users = db.table(Schema.USER.name)
+    users = db.table(USER)
 
     new_user = {
         'chat_id': args['chat_id'],
@@ -51,7 +52,7 @@ get_user_args = {
 @use_args(get_user_args)
 def get_user_api(args):
     db = get_database()
-    users = db.table(Schema.USER.name)
+    users = db.table(USER)
     user = users.get(Query()['chat_id'] == args['chat_id'])
     result = (
         {'id': user.doc_id, 'data': user} 
@@ -75,7 +76,7 @@ add_user_subscription_args = {
 @use_args(add_user_subscription_args)
 def add_user_subscription_api(args):
     db = get_database()
-    subscriptions = db.table(Schema.SUBSCRIPTION.name)
+    subscriptions = db.table(SUBSCRIPTION)
 
     current_date = datetime.now()
     expiration_date = current_date + timedelta(weeks=args['plan']*4)
@@ -98,8 +99,22 @@ def add_user_subscription_api(args):
 @use_args(get_user_args)
 def get_user_subscriptions_api(args):
     db = get_database()
-    subs = db.table(Schema.SUBSCRIPTION.name)
+    subs = db.table(SUBSCRIPTION)
+
     user_subs = subs.search(Query()['chat_id'] == args['chat_id'])
+
+    # ищем просроченные подписки в результатах запроса и удаляем их
+    timestamp_now = int(datetime.now().timestamp())
+    delete_subs = [
+        sub.doc_id for sub in user_subs 
+        if sub['expires_on'] <= timestamp_now
+        ]
+    subs.remove(doc_ids=delete_subs)
+
+    # по факту удаления нужно повторить запрос
+    if delete_subs:
+        user_subs = subs.search(Query()['chat_id'] == args['chat_id'])
+
     for user_sub in user_subs:
         user_sub['id'] = user_sub.doc_id
     return {'subs': user_subs}
@@ -115,24 +130,26 @@ get_recipe_args = {
 @use_args(get_recipe_args)
 def get_recipe_api(args):
     db = get_database()
-    subs = db.table(Schema.SUBSCRIPTION.name)
+    subs = db.table(SUBSCRIPTION)
+
     sub = subs.get(doc_id=args['sub_id'])
 
     if not sub:
-        return {'recipe': -1}
+        return {'recipe': 0}
 
-    recipe_table = db.table(Schema.RECIPE.name)
+    # запрашиваем рецепты по фильтрам и выбираем произвольную подписку
+    recipe_table = db.table(RECIPE)
     Recipe = Query()
     recipes = recipe_table.search(
         (Recipe.cousine_type == sub['cousine_type'])
         & (~ (Recipe.contains.any(sub['allergies'])))
         )
-    
-    print(recipes)
 
-    result = random.choice(recipes)
+    print(args['sub_id'], recipes)
 
-    return {'recipe': result if result else -1}
+    result = random.choice(recipes) if recipes else 0
+
+    return {'recipe': result if result else 0}
 
 
 @user_bp.route('/getReference', methods=['POST'])

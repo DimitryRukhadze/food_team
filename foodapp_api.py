@@ -1,8 +1,14 @@
+import os
+from urllib.parse import urljoin
 import requests
 
 
 def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_servings, plan):
-    url = 'http://127.0.0.1:5000/api/addSubscription'
+    '''Add subscription based on arguments'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/addSubscription')
+
     headers = {'Content-Type': 'application/json'}
     json_data = {
         'bot_token':'123',
@@ -21,7 +27,11 @@ def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_serv
 
 
 def get_subscriptions_api(chat_id):
-    url = 'http://127.0.0.1:5000/api/getSubscriptions'
+    '''Get subscription based on chat_id'''
+    
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/getSubscriptions')
+
     headers = {'Content-Type': 'application/json'}
     json_data = {
         'bot_token':'123',
@@ -35,7 +45,11 @@ def get_subscriptions_api(chat_id):
 
 
 def register_user_api(chat_id, firstname, lastname, phone):
-    url = 'http://127.0.0.1:5000/api/registerUser'
+    '''Register user based on credentials'''
+    
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/registerUser')
+
     headers = {'Content-Type': 'application/json'}
     json_data = {
         'bot_token':'123',
@@ -52,7 +66,11 @@ def register_user_api(chat_id, firstname, lastname, phone):
 
 
 def get_user_api(chat_id):
-    url = 'http://127.0.0.1:5000/api/getUser'
+    '''Get user data by chat_id'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/getUser')
+
     headers = {'Content-Type': 'application/json'}
     json_data = {
         'bot_token':'123',
@@ -66,7 +84,10 @@ def get_user_api(chat_id):
 
 
 def get_reference_api():
-    url = 'http://127.0.0.1:5000/api/getReference'
+    '''Get reference dictionary for constant values'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/getReference')
 
     response = requests.post(url)
     response.raise_for_status()
@@ -75,7 +96,11 @@ def get_reference_api():
 
 
 def get_recipe(sub_id):
-    url = 'http://127.0.0.1:5000/api/getRecipe'
+    '''Get random recipe based on sub_id'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/getRecipe')
+
     headers = {'Content-Type': 'application/json'}
     json_data = {
         'bot_token':'123',
