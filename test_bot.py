@@ -11,7 +11,6 @@ from telegram.ext import (
     CallbackQueryHandler, ConversationHandler, 
     PreCheckoutQueryHandler, MessageHandler, Filters
     )
-from time import sleep
 
 
 import foodapp_api
@@ -246,7 +245,7 @@ def get_invoice(update:Update, context:CallbackContext):
         f'Выберите аллергии или нажмите продолжить:'
     )
     invoice_payload = "TEST-PAYLOAD"
-    provider_token = "381764678:TEST:35445"
+    provider_token = os.getenv('YUKASSA_TOKEN')
     currency = "RUB"
 
     prices = [LabeledPrice(f'Подписка на { plan["name"]}', plan['price'] * 100)]
@@ -279,7 +278,6 @@ def get_checkout(update: Update, context: CallbackContext):
     invoice_id, invoice_chat_id = context.user_data['invoice']
     del context.user_data['invoice']
     context.bot.delete_message(chat_id=invoice_chat_id, message_id=invoice_id)
-
     return QUERY_SUBSCRIPTION
 
 
