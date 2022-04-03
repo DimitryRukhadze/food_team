@@ -22,7 +22,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION = range(7)
+SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(8)
 REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(7, 11)
 
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
@@ -89,16 +89,25 @@ def show_subscriptions(update, context) -> None:
         user_subscriptions = []
 
     if user_subscriptions:
-        [print(sub) for sub in user_subscriptions]
-        sub_buttons = [
-            f"{sub['cousine_type']}, {sub['num_servings']} блюд на {sub['num_persons']} человек"
-            for sub in user_subscriptions
-        ]
-        sub_markups = customize_menu_2(sub_buttons, cols=1)
-        query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ', reply_markup=sub_markups)
+        query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ')
+        for sub in user_subscriptions:
+            sub_id = sub['id']
+            sub_info = [
+                f"{sub['cousine_type']}, {sub['num_servings']} блюдо(а) на {sub['num_persons']} человек(а)"
+                for sub in user_subscriptions
+            ]
+            sub_markups = customize_menu_2(sub_id, sub_info, cols=1)
+            context.bot.send_message(chat_id=chat_id, text='Подписка №1', reply_markup=sub_markups)
+
+        return RECIPE
 
     else:
         query.edit_message_text(text="Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.")
+
+def give_user_recipe(update, context):
+    chat_id = update.effective_chat.id
+
+    recipe = foodapp_api.get_recipe(int(update.callback_query.data))
 
 
 def get_menu_type(update, context):
@@ -487,7 +496,8 @@ if __name__ == "__main__":
                 CallbackQueryHandler(get_plan, pattern='^allergies:Продолжить$'),
                 CallbackQueryHandler(get_allergies)
                 ],
-            INVOICE: [CallbackQueryHandler(get_invoice)]
+            INVOICE: [CallbackQueryHandler(get_invoice)],
+            RECIPE: [CallbackQueryHandler(give_user_recipe)]
         },
         fallbacks=[
             CommandHandler('start', start)
