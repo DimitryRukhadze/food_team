@@ -113,11 +113,12 @@ def show_subscriptions(update, context) -> None:
 def give_user_recipe(update, context):
     chat_id = update.effective_chat.id
     recipe = foodapp_api.get_recipe(int(update.callback_query.data))
+    print(recipe)
 
-    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
-    with open(image_url, "rb") as photo:
-        update.message.reply_photo(photo)
-    update.message.reply_markdown_v2(text)
+#    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
+#    with open(image_url, "rb") as photo:
+#       update.message.reply_photo(photo)
+#    update.message.reply_markdown_v2(text)
 
 def get_menu_type(update, context):
     chat_id = update.effective_chat.id
