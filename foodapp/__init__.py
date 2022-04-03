@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, send_from_directory
 
 from . import api_user
 
@@ -11,6 +11,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'db.json'),
+        IMAGES_FOLDER=os.path.join(app.instance_path, './images'),
         JSON_AS_ASCII=False
     )
 
@@ -29,5 +30,11 @@ def create_app(test_config=None):
 
     # a simple page that says hello
     app.register_blueprint(api_user.user_bp)
+
+    @app.route("/images/<path:filename>")
+    def download_file(filename):
+        return send_from_directory(
+            app.config['IMAGES_FOLDER'], filename
+        )
 
     return app
