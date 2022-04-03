@@ -17,7 +17,7 @@ def add_subscription_api(chat_id, cousine_type, allergies, num_persons, num_serv
     response = requests.post(url, headers=headers, json=json_data)
     response.raise_for_status()
 
-    return response.json()['id']
+    return response.json()
 
 
 def get_subscriptions_api(chat_id):
@@ -65,13 +65,13 @@ def get_user_api(chat_id):
     return response.json()['id']
 
 
-def get_pricing_api():
-    url = 'http://127.0.0.1:5000/api/getPlans'
+def get_reference_api():
+    url = 'http://127.0.0.1:5000/api/getReference'
 
     response = requests.post(url)
     response.raise_for_status()
 
-    return response.json()['plans']
+    return response.json()
 
 
 def get_recipe(sub_id):
