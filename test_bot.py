@@ -44,7 +44,7 @@ def start(update: Update, context: CallbackContext):
     for key in values_ref:
         context.bot_data[key] = values_ref[key]
 
-    reset_user_input(context)
+    reset_user_input(update, context)
 
     chat_id = update.effective_chat.id
     
