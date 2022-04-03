@@ -36,9 +36,9 @@ def register_user_api(args):
     }
 
     new_user_id = users.insert(new_user)
+    new_user = users.get(doc_id=new_user_id)
 
-
-    return {'id': new_user_id}
+    return {'id': new_user_id, 'data': new_user}
 
 
 get_user_args = {
