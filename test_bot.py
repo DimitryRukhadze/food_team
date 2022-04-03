@@ -2,15 +2,20 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot, ParseMode
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler, ConversationHandler
-from tinydb import Query
-from find_subscription import get_subscriptions, get_json_content, present_subscriptions, get_recipe
+from telegram import (
+    LabeledPrice, Update, 
+    InlineKeyboardButton, InlineKeyboardMarkup, 
+    )
+from telegram.ext import (
+    Updater, CommandHandler, CallbackContext, 
+    CallbackQueryHandler, ConversationHandler, 
+    PreCheckoutQueryHandler, MessageHandler, Filters
+    )
 from time import sleep
 
 
 import foodapp_api
-
+from bot_utils import *
 
 # Enable logging
 logging.basicConfig(
@@ -19,12 +24,29 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-FIRST, SECOND, THIRD, FOURTH, FIFTH = range(5)
+SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION = range(7)
 
-MY_SUBSCRIPTIONS, SUBSCRIBE = range(2)
+START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
 
 
-def start(update, context):
+def reset_user_data(context: CallbackContext):
+    invoice = context.user_data.get('invoice')
+    if invoice:
+        invoice_id, invoice_chat_id = invoice
+        context.bot.delete_message(chat_id=invoice_chat_id, message_id=invoice_id)
+
+    context.user_data.pop('allergies', None)
+
+
+def start(update: Update, context: CallbackContext):
+    values_ref = foodapp_api.get_reference_api()
+    for key in values_ref:
+        context.bot_data[key] = values_ref[key]
+
+    if update.callback_query:
+        update.callback_query.delete_message()
+    reset_user_data(context)
+
     chat_id = update.effective_chat.id
     menu_buttons = [
         InlineKeyboardButton('Мои подписки', callback_data=str(MY_SUBSCRIPTIONS)),
@@ -34,7 +56,7 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=2))
     context.bot.send_message(chat_id=chat_id, text='Что вы хотите сделать?', reply_markup=reply_markup)
 
-    return FIRST
+    return SHOW_SUB_OR_MENU
 
 
 def show_subscriptions(update, context) -> None:
@@ -62,7 +84,7 @@ def get_menu_type(update, context):
     chat_id = update.effective_chat.id
 
     api_field = 'cousine_type'
-    menu_types = ['Классическое', 'Вегетарианское', 'Кето', 'Низкоуглеводное']    
+    menu_types = context.bot_data['cousine_types']    
     menu_types_markup = customize_menu(api_field, menu_types)
 
 
@@ -73,7 +95,7 @@ def get_menu_type(update, context):
         reply_markup=menu_types_markup
     )
 
-    return SECOND
+    return NUM_PERSONS
 
 def get_persons_number(update, context):
     key, value = update.callback_query.data.split(':')
@@ -99,7 +121,7 @@ def get_persons_number(update, context):
         reply_markup=persons_markup
     )
 
-    return THIRD
+    return NUM_MEALS
 
 
 def get_meals_number(update, context):
@@ -126,7 +148,7 @@ def get_meals_number(update, context):
         reply_markup=num_of_meals_markup
     )
 
-    return FOURTH
+    return ALLERGY_OR_PLAN
 
 
 def get_allergies(update: Update, context: CallbackContext):
@@ -137,31 +159,15 @@ def get_allergies(update: Update, context: CallbackContext):
         context.user_data[key] = value
         context.user_data['allergies'] = []
         context.user_data['loop'] = True
-        context.user_data['loop_escape'] = 'Продолжить'
-    elif value == context.user_data['loop_escape']:
-        del context.user_data['loop']
-        del context.user_data['loop_escape']
-        
-        query_subscription(update, context)
-
-        return FIFTH
-
     else:
         context.user_data['allergies'].append(value)
 
     api_field = 'allergies'
-    allergy_types_base = [
-        'Рыба и морепродукты',
-        'Мясо',
-        'Зерновые',
-        'Продукты пчеловодства',
-        'Орехи и бобовые',
-        'Молочные продукты',
-        'Продолжить'
-    ]
-    allergy_types = [t for t in allergy_types_base if t not in context.user_data['allergies']]
+    all_allergy_types = [t for t in context.bot_data['allergies']]
+    all_allergy_types.append('Продолжить')
+    remaining_allergy_types = [t for t in all_allergy_types if t not in context.user_data['allergies']]
 
-    allergy_types_markup = customize_menu(api_field, allergy_types, cols=1)
+    allergy_types_markup = customize_menu(api_field, remaining_allergy_types, cols=1)
     allergies_chosen = ', '.join(context.user_data['allergies']) if context.user_data["allergies"] else 'нет'
     text = (
         f'Тип меню: {context.user_data["cousine_type"]}\n'
@@ -179,65 +185,150 @@ def get_allergies(update: Update, context: CallbackContext):
         reply_markup=allergy_types_markup
     )
 
-    return FOURTH
+    return ALLERGY_OR_PLAN
 
 
-def query_subscription(update, context):
-    print(context.user_data)
+def get_plan(update: Update, context: CallbackContext):
+    del context.user_data['loop']
+    plans = context.bot_data['plans']
+
+    api_field = 'plan'
+    menu_plans = [f'{plan["name"]} - {plan["price"]} р.' for plan in plans]    
+    menu_plans_markup = customize_menu(api_field, menu_plans)
+
+    allergies_chosen = (
+        ', '.join(context.user_data["allergies"])
+        if context.user_data["allergies"] else 'Нет'
+    )
+
+    text = (
+        f'Тип меню: {context.user_data["cousine_type"]}\n'
+        f'Количество персон: {context.user_data["num_persons"]}\n'
+        f'Количество порций: {context.user_data["num_servings"]}\n'
+        f'Выбранные аллергии: {allergies_chosen}\n'
+        f'\n'
+        f'Выберите один из доступных планов подписки:'
+    )
+
+    update.callback_query.delete_message()
+    chat_id = update.effective_chat.id
+    
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=menu_plans_markup
+    )
+    
+    return INVOICE
+
+
+def get_invoice(update:Update, context:CallbackContext):
+    for plan in context.bot_data['plans']:
+        if plan['name'] in update.callback_query.data:
+            selected_plan = plan
+            
+    context.user_data['plan_duration'] = selected_plan['duration']
 
     chat_id = update.effective_chat.id
-    new_subscription = None
+
+    invoice_title = 'Оформление подписки'
+    allergies_chosen = (
+        ', '.join(context.user_data["allergies"])
+        if context.user_data["allergies"] else 'Нет'
+    )
+    invoice_description = (
+        f'Тип меню: {context.user_data["cousine_type"]}\n'
+        f'Количество персон: {context.user_data["num_persons"]}\n'
+        f'Количество порций: {context.user_data["num_servings"]}\n'
+        f'Выбранные аллергии: {allergies_chosen}\n'
+        f'Срок подписки (месяцев): {context.user_data["plan_duration"]} \n'
+        f'\n'
+        f'Выберите аллергии или нажмите продолжить:'
+    )
+    invoice_payload = "TEST-PAYLOAD"
+    provider_token = "381764678:TEST:35445"
+    currency = "RUB"
+
+    prices = [LabeledPrice(f'Подписка на { plan["name"]}', plan['price'] * 100)]
+
+    update.callback_query.delete_message()
+    invoice = context.bot.send_invoice(
+        chat_id=chat_id, 
+        title=invoice_title, 
+        description=invoice_description, 
+        payload=invoice_payload,
+        provider_token=provider_token, 
+        currency=currency, 
+        prices=prices
+    )
+    
+    context.user_data['invoice'] = (invoice.message_id, invoice.chat_id)
+
+    return ConversationHandler.END
+
+
+def get_checkout(update: Update, context: CallbackContext):
+    query = update.pre_checkout_query
+
+    if query.invoice_payload != 'TEST-PAYLOAD':
+        # answer False pre_checkout_query
+        query.answer(ok=False, error_message="Что-то пошло не так...")
+    else:
+        query.answer(ok=True)
+
+    invoice_id, invoice_chat_id = context.user_data['invoice']
+    del context.user_data['invoice']
+    context.bot.delete_message(chat_id=invoice_chat_id, message_id=invoice_id)
+
+    return QUERY_SUBSCRIPTION
+
+
+def query_subscription(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
     try:
-        new_subscription = foodapp_api.add_subscription_api(
+        new_sub = foodapp_api.add_subscription_api(
             chat_id=chat_id,
             cousine_type=context.user_data['cousine_type'],
             num_persons=int(context.user_data['num_persons']),
             num_servings=int(context.user_data['num_servings']),
             allergies=context.user_data['allergies'],
-            plan=12
+            plan=context.user_data['plan_duration']
         )
     except Exception:
-        new_subscription = None
+        new_sub = None
 
-    if new_subscription:
-        text = 'Отлично! Ваша подписка создана!\nВы можете вернуться в главное меню командой /start'
+    if new_sub:
+        sub_data = new_sub['data']
+        excluded = (
+            f'Исключены {", ".join(sub_data["allergies"]).lower()}' 
+            if sub_data["allergies"] else 'Любые продукты'
+        )
+        text = (
+            f'Отлично! Ваша подписка создана!\n\n'
+            f'{sub_data["cousine_type"]} меню\n'
+            f'По {get_plural_for_servings(sub_data["num_servings"])} '
+            f'на {get_plural_for_person(sub_data["num_persons"])}\n'
+            f'{excluded}\n'
+            f'\n'
+            f'Подписка активна до {get_date_from_timestamp(sub_data["expires_on"])}'
+        )
     else:
         text = 'Что-то пошло не так... попробуйте повторить попытку позже!\nВы можете вернуться в главное меню командой /start'
-
-    update.callback_query.delete_message()
     
+
+    menu_buttons = [[
+        InlineKeyboardButton('Вернуться в меню', callback_data=str(START))
+    ]]
+    reply_markup = InlineKeyboardMarkup(menu_buttons)
+
     context.bot.send_message(
         chat_id=chat_id,
-        text=text
+        text=text,
+        reply_markup=reply_markup
     )
+    
 
     return ConversationHandler.END
-
-
-def customize_menu(field, menu_names, cols=''):
-    if not cols and not len(menu_names)%2:
-        cols = 2
-    elif not cols:
-        cols = 3
-
-    menu_buttons = [
-        InlineKeyboardButton(type, callback_data=f'{field}:{type}')
-        for type in menu_names
-    ]
-
-    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=cols))
-
-    return reply_markup
-
-
-def build_menu(buttons, n_cols):
-
-    menu = [
-        buttons[button:button + n_cols]
-        for button in range(0, len(buttons), n_cols)
-    ]
-
-    return menu
 
 
 if __name__ == "__main__":
@@ -245,19 +336,30 @@ if __name__ == "__main__":
     updater = Updater(os.getenv("TG_TOKEN"))
 
     dispatcher = updater.dispatcher
+    dispatcher.add_handler(PreCheckoutQueryHandler(get_checkout))
+    dispatcher.add_handler(MessageHandler(Filters.successful_payment, query_subscription))
+
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-        states={
-            FIRST: [
-                CallbackQueryHandler(show_subscriptions, pattern='^' + str(MY_SUBSCRIPTIONS) + '$'),
-                CallbackQueryHandler(get_menu_type, pattern='^' + str(SUBSCRIBE) + '$')
+        entry_points=[
+            CommandHandler('start', start),
+            CallbackQueryHandler(start, pattern=f'^{str(START)}$')
             ],
-            SECOND:[CallbackQueryHandler(get_persons_number)],
-            THIRD:[CallbackQueryHandler(get_meals_number)],
-            FOURTH:[CallbackQueryHandler(get_allergies)],
-            FIFTH:[CallbackQueryHandler(query_subscription)]
+        states={
+            SHOW_SUB_OR_MENU: [
+                CallbackQueryHandler(show_subscriptions, pattern=f'^{str(MY_SUBSCRIPTIONS)}$'),
+                CallbackQueryHandler(get_menu_type, pattern=f'^{str(SUBSCRIBE)}$')
+            ],
+            NUM_PERSONS: [CallbackQueryHandler(get_persons_number)],
+            NUM_MEALS: [CallbackQueryHandler(get_meals_number)],
+            ALLERGY_OR_PLAN: [
+                CallbackQueryHandler(get_plan, pattern='^allergies:Продолжить$'),
+                CallbackQueryHandler(get_allergies)
+                ],
+            INVOICE: [CallbackQueryHandler(get_invoice)]
         },
-        fallbacks=[CommandHandler('start', start)]
+        fallbacks=[
+            CommandHandler('start', start)
+            ]
     )
     dispatcher.add_handler(conv_handler)
 
