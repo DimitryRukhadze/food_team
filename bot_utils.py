@@ -101,34 +101,34 @@ def get_readable_allergies(allergies):
 #     return user_subs
 
 
-def show_recipe(content):
+def show_recipe(recipe):
     # content = get_json_content("./recipe_maker/food_menu.json")
-    recepi_name = content["name"]
-    recepi_description = content["description"].replace(".", "\.")
-    cousine = content["cousine_type"]
-    calories = content["calories"]
-    steps_content = []
-    new_ingredient = []
-    allergens = ", ".join(content["contains"]).lower()
-    for step in content["steps"]:
-        line = ""
-        name = step["title"]
-        text = step["text"]
-        line = f"_\n{name}:_\n{text}"
-        steps_content.append(line)
-    steps = "".join(steps_content)
-    for ingredient in content[0]["ingredients"]:
-        line = ""
-        name = ingredient["name"]
+    recipe_description = recipe['description'].replace('.', '\.').replace('-', '\-')
+    calories = recipe["calories"]
+    contents = ', '.join(['contains']).lower()
+    steps = [
+        f'_\n{step["title"]}:_\n{step["text"]}'
+        for step in recipe["steps"]
+    ]
+    steps_as_text = ''.join(steps).replace('.', '\.').replace('-', '\-')
+
+    ingredients = []
+    for ingredient in recipe["ingredients"]:
         if ingredient["countable"]:
-            amount = ingredient["amount"]
-            units = ingredient["units"]
-            line = f"\n{name} \- {amount} {units}"
+            line = f'\n{ingredient["name"]} - {ingredient["amount"]} {ingredient["units"]}'
         else:
-            line = f"\n{name}"
-        new_ingredient.append(line)
-    ingredients = ";".join(new_ingredient).lower()
-    image_url = content["img_url"]
+            line = f'\n{ingredient["name"]}'
+        ingredients.append(line)
+    ingredients_as_text = '; '.join(ingredients).lower().replace('-', '\-').replace('.', '\.')
+    image_name = recipe['img_name']
     # ужасная f строка, но пока оставил так на первое время
-    text = f"*_\n{recepi_name}_*\n*Меню:* {cousine} \n*Описание рецепта:* {recepi_description}\n*Ингредиенты:* {ingredients}\n*Калории:* {calories} Ккал\n*Аллергены:* {allergens}\n*Шаги:* {steps}"
-    return text, image_url
+    text = (
+        f'*_\n{recipe["name"]}_*'
+        f'\n*Меню:* {recipe["cousine_type"]}'
+        f'\n*Описание рецепта:* {recipe_description}'
+        f'\n*Ингредиенты:* {ingredients_as_text}'
+        f'\n*Пищевая ценность:* {recipe["calories"]} Ккал'
+        f'\n*Содержит:* {contents}'
+        f'\n*Шаги:* {steps_as_text}'
+    )
+    return text, image_name
