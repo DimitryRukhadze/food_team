@@ -4,9 +4,9 @@ from flask import current_app, g
 from tinydb import TinyDB
 
 
-USER = 'User'
-SUBSCRIPTION = 'Subscription'
-RECIPE = 'Recipe'
+USER = 'USER'
+SUBSCRIPTION = 'SUBSCRIPTION'
+RECIPE = 'RECIPE'
 
 
 REFERENCE = {
