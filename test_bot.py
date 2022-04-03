@@ -1,3 +1,4 @@
+from email import charset
 import logging
 import os
 
@@ -49,8 +50,8 @@ def start(update: Update, context: CallbackContext):
 
     chat_id = update.effective_chat.id
     
-    user_id = foodapp_api.get_user_api(chat_id)
-    if not user_id:
+    user = foodapp_api.get_user_api(chat_id)
+    if not user:
         text = (
             "Вы не зарегистрированы в системе.\nЕсли вы хотите продолжить,"
             "нам с Вами надо как следует познакомиться.\nГотовы начать?"
@@ -60,6 +61,10 @@ def start(update: Update, context: CallbackContext):
             InlineKeyboardButton(text='Начать регистрацию', callback_data=str(REGISTER))
         ]])
     else:
+        text = (
+            f'С возвращением, {user["firstname"]}!'
+            f'Выберите действие, чтобы продолжить:'
+        )
         menu_buttons = [[
             InlineKeyboardButton('Мои подписки', callback_data=str(MY_SUBSCRIPTIONS)),
             InlineKeyboardButton('Оформить подписку', callback_data=str(SUBSCRIBE))
@@ -365,6 +370,7 @@ def get_firstname(update: Update, context: CallbackContext):
 
 def get_lastname(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+    context.user_data['firstname'] = update.message.text
 
     text = (
         'Введите Вашу фамилию:'
@@ -380,10 +386,11 @@ def get_lastname(update: Update, context: CallbackContext):
 
 def get_phone(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+    context.user_data['lastname'] = update.message.text
 
     text = (
-        'Отлично!\nДля регистрации в системе нам необходимо знать'
-        'Ваш номер телефона.\nНажмите на кнопку, чтобы поделиться'
+        'Отлично!\nДля регистрации в системе нам необходимо знать '
+        'Ваш номер телефона.\nНажмите на кнопку, чтобы поделиться '
         'с нами Вашей контактной информацией.'
     )
 
@@ -402,15 +409,32 @@ def get_phone(update: Update, context: CallbackContext):
 
 def finish_registration(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    
-    text = (
-        'Приятно познакомиться!\n'
-        'Теперь Вы можете оформить свою первую подписку.'
+
+    foodapp_api.register_user_api(
+        chat_id=chat_id,
+        firstname=context.user_data['firstname'],
+        lastname=context.user_data['lastname'],
+        phone=update.message.contact.phone_number
     )
 
-    reply_markup = InlineKeyboardMarkup([[
-        InlineKeyboardButton(text='Оформить подписку', callback_data=str(SUBSCRIBE))
-    ]])
+    if update.message.contact.user_id != update.effective_user.id:
+        text = (
+            'Хм... что-то не сходится.\n'
+            'Давайте вернемся к началу'
+        )
+
+        reply_markup = InlineKeyboardMarkup([[
+            InlineKeyboardButton(text='Повторить регистрацию', callback_data=str(REGISTER))
+        ]])
+    else:
+        text = (
+            'Приятно познакомиться!\n'
+            'Теперь Вы можете оформить свою первую подписку.'
+        )
+
+        reply_markup = InlineKeyboardMarkup([[
+            InlineKeyboardButton(text='Оформить подписку', callback_data=str(SUBSCRIBE))
+        ]])
 
     context.bot.send_message(
         chat_id=chat_id,
