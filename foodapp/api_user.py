@@ -53,8 +53,11 @@ def get_user_api(args):
     db = get_database()
     users = db.table(Schema.USER.name)
     user = users.get(Query()['chat_id'] == args['chat_id'])
-
-    return {'id': user.doc_id if user else 0}
+    result = (
+        {'id': user.doc_id, 'data': user} 
+        if user else {'id': 0}
+    ) 
+    return result
 
 
 add_user_subscription_args = {
