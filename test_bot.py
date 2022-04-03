@@ -133,6 +133,7 @@ def give_user_recipe(update, context):
         parse_mode=ParseMode.HTML
         )
 
+
 def get_menu_type(update, context):
     chat_id = update.effective_chat.id
 
