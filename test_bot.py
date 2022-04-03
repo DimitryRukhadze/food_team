@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from telegram import (
-    LabeledPrice, Update, 
+    KeyboardButton, LabeledPrice, ReplyKeyboardMarkup, Update, 
     InlineKeyboardButton, InlineKeyboardMarkup, 
     )
 from telegram.ext import (
@@ -24,6 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION = range(7)
+REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(7, 11)
 
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
 
@@ -47,13 +48,29 @@ def start(update: Update, context: CallbackContext):
     reset_user_data(context)
 
     chat_id = update.effective_chat.id
-    menu_buttons = [
-        InlineKeyboardButton('Мои подписки', callback_data=str(MY_SUBSCRIPTIONS)),
-        InlineKeyboardButton('Оформить подписку', callback_data=str(SUBSCRIBE))
-    ]
+    
+    user_id = foodapp_api.get_user_api(chat_id)
+    if not user_id:
+        text = (
+            "Вы не зарегистрированы в системе.\nЕсли вы хотите продолжить,"
+            "нам с Вами надо как следует познакомиться.\nГотовы начать?"
+        )
 
-    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=2))
-    context.bot.send_message(chat_id=chat_id, text='Что вы хотите сделать?', reply_markup=reply_markup)
+        reply_markup = InlineKeyboardMarkup([[
+            InlineKeyboardButton(text='Начать регистрацию', callback_data=str(REGISTER))
+        ]])
+    else:
+        menu_buttons = [[
+            InlineKeyboardButton('Мои подписки', callback_data=str(MY_SUBSCRIPTIONS)),
+            InlineKeyboardButton('Оформить подписку', callback_data=str(SUBSCRIBE))
+        ]]
+        reply_markup = InlineKeyboardMarkup(menu_buttons)
+
+    context.bot.send_message(
+        chat_id=chat_id, 
+        text=text, 
+        reply_markup=reply_markup
+        )
 
     return SHOW_SUB_OR_MENU
 
@@ -329,6 +346,81 @@ def query_subscription(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
+def get_firstname(update: Update, context: CallbackContext):
+    update.callback_query.delete_message()
+    chat_id = update.effective_chat.id
+
+    text = (
+        'Мы бы хотели знать Ваше имя и фамилию\n'
+        'Для начала, пожалуйста, введите имя:'
+    )
+
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text
+    )
+
+    return FIRSTNAME
+
+
+def get_lastname(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+
+    text = (
+        'Введите Вашу фамилию:'
+    )
+
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text
+    )
+
+    return LASTNAME
+
+
+def get_phone(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+
+    text = (
+        'Отлично!\nДля регистрации в системе нам необходимо знать'
+        'Ваш номер телефона.\nНажмите на кнопку, чтобы поделиться'
+        'с нами Вашей контактной информацией.'
+    )
+
+    reply_markup = ReplyKeyboardMarkup([[
+        KeyboardButton(text='Поделиться контатной информацией', request_contact=True)
+    ]], one_time_keyboard=True)
+
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=reply_markup
+    )
+
+    return CONTACT
+
+
+def finish_registration(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    
+    text = (
+        'Приятно познакомиться!\n'
+        'Теперь Вы можете оформить свою первую подписку.'
+    )
+
+    reply_markup = InlineKeyboardMarkup([[
+        InlineKeyboardButton(text='Оформить подписку', callback_data=str(SUBSCRIBE))
+    ]])
+
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=reply_markup
+    )
+
+    return ConversationHandler.END
+
+
 if __name__ == "__main__":
     load_dotenv()
     updater = Updater(os.getenv("TG_TOKEN"))
@@ -337,13 +429,30 @@ if __name__ == "__main__":
     dispatcher.add_handler(PreCheckoutQueryHandler(get_checkout))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, query_subscription))
 
-    conv_handler = ConversationHandler(
+    registration_conversation = ConversationHandler(
+        entry_points=[
+                CallbackQueryHandler(get_firstname, pattern=f'^{str(REGISTER)}$')
+            ],
+        states={
+            FIRSTNAME: [MessageHandler(Filters.text & ~Filters.command, get_lastname)],
+            LASTNAME: [MessageHandler(Filters.text & ~Filters.command, get_phone)],
+            CONTACT: [MessageHandler(Filters.contact, finish_registration)],
+        },
+        fallbacks=[
+            CommandHandler('start', start)
+            ],
+        map_to_parent={
+            ConversationHandler.END: SHOW_SUB_OR_MENU
+        }
+    )
+    main_conversation = ConversationHandler(
         entry_points=[
             CommandHandler('start', start),
             CallbackQueryHandler(start, pattern=f'^{str(START)}$')
             ],
         states={
             SHOW_SUB_OR_MENU: [
+                registration_conversation,
                 CallbackQueryHandler(show_subscriptions, pattern=f'^{str(MY_SUBSCRIPTIONS)}$'),
                 CallbackQueryHandler(get_menu_type, pattern=f'^{str(SUBSCRIBE)}$')
             ],
@@ -359,7 +468,7 @@ if __name__ == "__main__":
             CommandHandler('start', start)
             ]
     )
-    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(main_conversation)
 
     updater.start_polling()
     updater.idle()
