@@ -62,7 +62,7 @@ def get_user_api(chat_id):
     response = requests.post(url, headers=headers, json=json_data)
     response.raise_for_status()
 
-    return response.json()['id']
+    return response.json()
 
 
 def get_reference_api():
