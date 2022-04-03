@@ -4,10 +4,9 @@ from flask import current_app, g
 from tinydb import TinyDB
 
 
-class Schema(Enum):
-    USER = 'User'
-    SUBSCRIPTION = 'Subscription'
-    RECIPE = 'Recipe'
+USER = 'User'
+SUBSCRIPTION = 'Subscription'
+RECIPE = 'Recipe'
 
 
 REFERENCE = {
