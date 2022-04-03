@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint
 from tinydb import Query
 
-from foodapp.db import get_database, Schema, FIELD_LISTS
+from foodapp.db import get_database, Schema, REFERENCE
 from webargs import fields
 from webargs.flaskparser import use_args
 
@@ -37,6 +37,7 @@ def register_user_api(args):
 
     new_user_id = users.insert(new_user)
 
+
     return {'id': new_user_id}
 
 
@@ -59,8 +60,8 @@ def get_user_api(args):
 add_user_subscription_args = {
     'bot_token': fields.Str(required=True),
     'chat_id': fields.Int(required=True),
-    'cousine_type': fields.Str(required=True, validate=lambda val: val in FIELD_LISTS['cousine_types']),
-    'allergies': fields.List(fields.Str(validate=lambda val: val in FIELD_LISTS['allergies'])),
+    'cousine_type': fields.Str(required=True, validate=lambda val: val in REFERENCE['cousine_types']),
+    'allergies': fields.List(fields.Str(validate=lambda val: val in REFERENCE['allergies'])),
     'num_persons': fields.Int(missing=4),
     'num_servings': fields.Int(missing=6),
     'plan': fields.Int(required=True)
@@ -86,7 +87,8 @@ def add_user_subscription_api(args):
     }
 
     subscription_id = subscriptions.insert(new_plan)
-    return {'id': subscription_id}
+    new_subcription = subscriptions.get(doc_id = subscription_id)
+    return {'id': subscription_id, 'data': new_subcription}
 
 
 @user_bp.route('/getSubscriptions', methods=['POST'])
@@ -122,7 +124,18 @@ def get_recipe_api(args):
         (Recipe.cousine_type == sub['cousine_type'])
         & (~ (Recipe.contains.any(sub['allergies'])))
         )
+    
+    print(recipes)
 
     result = random.choice(recipes)
 
     return {'recipe': result if result else -1}
+
+
+@user_bp.route('/getReference', methods=['POST'])
+def get_reference():
+    return {
+        'plans': REFERENCE['plans'],
+        'cousine_types': REFERENCE['cousine_types'],
+        'allergies': REFERENCE['allergies']
+    }
