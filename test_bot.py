@@ -1,4 +1,3 @@
-from email import charset
 import logging
 import os
 
@@ -35,7 +34,8 @@ def reset_user_input(update: Update, context: CallbackContext):
     if invoice:
         invoice_id, invoice_chat_id = invoice
         context.bot.delete_message(chat_id=invoice_chat_id, message_id=invoice_id)
-
+    if update.callback_query:
+            update.callback_query.delete_message()
     context.user_data.clear()
 
 
@@ -44,8 +44,6 @@ def start(update: Update, context: CallbackContext):
     for key in values_ref:
         context.bot_data[key] = values_ref[key]
 
-    if update.callback_query:
-        update.callback_query.delete_message()
     reset_user_input(context)
 
     chat_id = update.effective_chat.id
