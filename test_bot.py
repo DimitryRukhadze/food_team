@@ -30,13 +30,13 @@ REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(7, 11)
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
 
 
-def reset_user_data(context: CallbackContext):
+def reset_user_input(update: Update, context: CallbackContext):
     invoice = context.user_data.get('invoice')
     if invoice:
         invoice_id, invoice_chat_id = invoice
         context.bot.delete_message(chat_id=invoice_chat_id, message_id=invoice_id)
 
-    context.user_data.pop('allergies', None)
+    context.user_data.clear()
 
 
 def start(update: Update, context: CallbackContext):
@@ -46,7 +46,7 @@ def start(update: Update, context: CallbackContext):
 
     if update.callback_query:
         update.callback_query.delete_message()
-    reset_user_data(context)
+    reset_user_input(context)
 
     chat_id = update.effective_chat.id
     
@@ -471,6 +471,7 @@ if __name__ == "__main__":
             ConversationHandler.END: SHOW_SUB_OR_MENU
         }
     )
+
     main_conversation = ConversationHandler(
         entry_points=[
             CommandHandler('start', start),
