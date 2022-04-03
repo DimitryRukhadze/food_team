@@ -48,7 +48,8 @@ def customize_menu_2(subs, cols=''):
         InlineKeyboardButton(value, callback_data=key)
         for key, value in subs.items()
     ]
-    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=cols))
+    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=1))
+    return reply_markup
 
 
 def build_menu(buttons, n_cols):
@@ -83,50 +84,35 @@ def get_plural_for_servings(amount):
 def get_readable_allergies(allergies):
     return ', '.join(allergies).lower()
 
-# def get_json_content(json_file):
-#     """ Читает json файлы, возвращает содержимое """
-#     with open(json_file, "r", encoding="utf_8") as file:
-#         file_contents = file.read()
-#         content = json.loads(file_contents)
-#         return content
-
-
-# def get_subscriptions(user_id, subs):
-#     user_subs = []
-#     for sub in subs["subscriptions"]:
-#         if sub["user_id"] == user_id:
-#             user_subs.append(sub)
-#     return user_subs
-
 
 def show_recipe(recipe):
     # content = get_json_content("./recipe_maker/food_menu.json")
-    recipe_description = recipe['description'].replace('.', '\.').replace('-', '\-')
+    recipe_description = recipe['description']
     calories = recipe["calories"]
-    contents = ', '.join(['contains']).lower()
+    allergens = ', '.join(recipe['contains']).lower()
     steps = [
-        f'_\n{step["title"]}:_\n{step["text"]}'
+        f'\n\t<i>{step["title"]}</i> \n{step["text"]}'
         for step in recipe["steps"]
     ]
-    steps_as_text = ''.join(steps).replace('.', '\.').replace('-', '\-')
+    steps_as_text = ''.join(steps)
 
     ingredients = []
-    for ingredient in recipe["ingredients"]:
-        if ingredient["countable"]:
-            line = f'\n{ingredient["name"]} - {ingredient["amount"]} {ingredient["units"]}'
+    for ingredient in recipe['ingredients']:
+        if ingredient['countable'] and ingredient['units']:
+            line = f'\n\t{ingredient["name"]} - {ingredient["amount"]} {ingredient["units"]}'
         else:
-            line = f'\n{ingredient["name"]}'
+            line = f'\n\t{ingredient["name"]}'
         ingredients.append(line)
-    ingredients_as_text = '; '.join(ingredients).lower().replace('-', '\-').replace('.', '\.')
+    ingredients_as_text = '; '.join(ingredients).lower()
     image_name = recipe['img_name']
     # ужасная f строка, но пока оставил так на первое время
     text = (
-        f'*_\n{recipe["name"]}_*'
-        f'\n*Меню:* {recipe["cousine_type"]}'
-        f'\n*Описание рецепта:* {recipe_description}'
-        f'\n*Ингредиенты:* {ingredients_as_text}'
-        f'\n*Пищевая ценность:* {recipe["calories"]} Ккал'
-        f'\n*Содержит:* {contents}'
-        f'\n*Шаги:* {steps_as_text}'
+        f'\n<b><i>{recipe["name"]}</i></b>'
+        f'\n<b>Меню:</b> {recipe["cousine_type"]}'
+        f'\n<b>Описание рецепта:</b> {recipe_description}'
+        f'\n<b>Ингредиенты:</b> {ingredients_as_text}'
+        f'\n<b>Пищевая ценность:</b> {recipe["calories"]} Ккал'
+        f'\n<b>Содержит:</b> {allergens}'
+        f'\n<b>Как приготовить:</b> {steps_as_text}'
     )
     return text, image_name

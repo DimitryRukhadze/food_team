@@ -120,8 +120,8 @@ def give_user_recipe(update, context):
 
     context.bot.send_message(
         chat_id=chat_id, 
-        text='*Ваше блюдо ↓*', 
-        parse_mode=ParseMode.MARKDOWN_V2
+        text='<b>Ваше блюдо ↓</b>', 
+        parse_mode=ParseMode.HTML
     )
     context.bot.send_photo(
         chat_id=chat_id, 
@@ -130,7 +130,7 @@ def give_user_recipe(update, context):
     context.bot.send_message(
         chat_id=chat_id, 
         text=text, 
-        parse_mode=ParseMode.MARKDOWN_V2
+        parse_mode=ParseMode.HTML
         )
 
 def get_menu_type(update, context):
