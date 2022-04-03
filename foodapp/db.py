@@ -10,7 +10,7 @@ class Schema(Enum):
     RECIPE = 'Recipe'
 
 
-FIELD_LISTS = {
+REFERENCE = {
     'cousine_types': [
         'Классическое',
         'Низкоуглеводное',
@@ -23,6 +23,12 @@ FIELD_LISTS = {
         'Продукты пчеловодства',
         'Орехи и бобовые',
         'Молочные продукты'
+    ],
+    'plans': [
+        {'name': '1 месяц', 'price' : 100, 'duration': 1},
+        {'name': '3 месяца', 'price' : 285, 'duration': 3},
+        {'name': '6 месяцев', 'price' : 550, 'duration': 6},
+        {'name': '12 месяцев', 'price' : 1000, 'duration': 12}
     ]
 }
 
