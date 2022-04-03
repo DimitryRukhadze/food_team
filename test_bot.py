@@ -51,7 +51,8 @@ def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     
     user = foodapp_api.get_user_api(chat_id)
-    if not user:
+    user_id = user['id']
+    if not user_id:
         text = (
             "Вы не зарегистрированы в системе.\nЕсли вы хотите продолжить,"
             "нам с Вами надо как следует познакомиться.\nГотовы начать?"
@@ -61,8 +62,9 @@ def start(update: Update, context: CallbackContext):
             InlineKeyboardButton(text='Начать регистрацию', callback_data=str(REGISTER))
         ]])
     else:
+        user_data = user['data']
         text = (
-            f'С возвращением, {user["firstname"]}!'
+            f'С возвращением, {user_data["firstname"]}!\n'
             f'Выберите действие, чтобы продолжить:'
         )
         menu_buttons = [[
@@ -270,7 +272,7 @@ def get_invoice(update:Update, context:CallbackContext):
     provider_token = os.getenv('YUKASSA_TOKEN')
     currency = "RUB"
 
-    prices = [LabeledPrice(f'Подписка на { plan["name"]}', plan['price'] * 100)]
+    prices = [LabeledPrice(f'Подписка на {selected_plan["name"]}', selected_plan['price'] * 100)]
 
     update.callback_query.delete_message()
     invoice = context.bot.send_invoice(
