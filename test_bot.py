@@ -90,14 +90,19 @@ def show_subscriptions(update, context) -> None:
 
     if user_subscriptions:
         query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ')
+
+        sub_info = {}
+
         for sub in user_subscriptions:
             sub_id = sub['id']
-            sub_info = [
-                f"{sub['cousine_type']}, {sub['num_servings']} блюдо(а) на {sub['num_persons']} человек(а)"
-                for sub in user_subscriptions
-            ]
-            sub_markups = customize_menu_2(sub_id, sub_info, cols=1)
-            context.bot.send_message(chat_id=chat_id, text='Подписка №1', reply_markup=sub_markups)
+            sub_stats = f"{sub['cousine_type']}, {sub['num_servings']} блюдо(а) на {sub['num_persons']} человек(а)"
+
+            sub_info[sub_id] = sub_stats
+        print(sub_info)
+        sub_markups = customize_menu_2(sub_info, cols=1)
+
+        context.bot.send_message(chat_id=chat_id, text='Ваши подписки', reply_markup=sub_markups)
+
 
         return RECIPE
 
@@ -108,12 +113,12 @@ def show_subscriptions(update, context) -> None:
 def give_user_recipe(update, context):
     chat_id = update.effective_chat.id
     recipe = foodapp_api.get_recipe(int(update.callback_query.data))
-    text, image_url = show_recipe(recipe)
-    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
-    with open(image_url, "rb") as photo:
-        update.message.reply_photo(photo)
-    update.message.reply_markdown_v2(text)
+    print(recipe)
 
+#    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
+#    with open(image_url, "rb") as photo:
+#       update.message.reply_photo(photo)
+#    update.message.reply_markdown_v2(text)
 
 def get_menu_type(update, context):
     chat_id = update.effective_chat.id
