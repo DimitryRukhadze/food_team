@@ -113,6 +113,18 @@ def get_recipe(sub_id):
     return response.json()['recipe']
 
 
+def get_image_from_server(img_name):
+    '''Get image from server directory'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, f'images/{img_name}')
+
+    response = requests.get(url)
+    response.raise_for_status()
+
+    return response.content
+    
+
 def main():
     pass
 
