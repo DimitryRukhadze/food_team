@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from telegram import (
-    KeyboardButton, LabeledPrice, ReplyKeyboardMarkup, Update,
+    KeyboardButton, LabeledPrice, ParseMode, ReplyKeyboardMarkup, Update,
     )
 from telegram.ext import (
     Updater, CommandHandler, CallbackContext, 
@@ -113,12 +113,25 @@ def show_subscriptions(update, context) -> None:
 def give_user_recipe(update, context):
     chat_id = update.effective_chat.id
     recipe = foodapp_api.get_recipe(int(update.callback_query.data))
-    print(recipe)
 
-#    update.message.reply_markdown_v2("*Ваше блюдо ↓*")
-#    with open(image_url, "rb") as photo:
-#       update.message.reply_photo(photo)
-#    update.message.reply_markdown_v2(text)
+    text, image_name = show_recipe(recipe)
+
+    recipe_image = foodapp_api.get_image_from_server(image_name)
+
+    context.bot.send_message(
+        chat_id=chat_id, 
+        text='*Ваше блюдо ↓*', 
+        parse_mode=ParseMode.MARKDOWN_V2
+    )
+    context.bot.send_photo(
+        chat_id=chat_id, 
+        photo=recipe_image
+        )
+    context.bot.send_message(
+        chat_id=chat_id, 
+        text=text, 
+        parse_mode=ParseMode.MARKDOWN_V2
+        )
 
 def get_menu_type(update, context):
     chat_id = update.effective_chat.id
