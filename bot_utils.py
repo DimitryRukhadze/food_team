@@ -103,14 +103,14 @@ def get_readable_allergies(allergies):
 
 def show_recipe(content):
     # content = get_json_content("./recipe_maker/food_menu.json")
-    recepi_name = content[0]["name"]
-    recepi_description = content[0]["description"].replace(".", "\.")
-    cousine = content[0]["cousine_type"]
-    calories = content[0]["calories"]
+    recepi_name = content["name"]
+    recepi_description = content["description"].replace(".", "\.")
+    cousine = content["cousine_type"]
+    calories = content["calories"]
     steps_content = []
     new_ingredient = []
-    allergens = ", ".join(content[0]["contains"]).lower()
-    for step in content[0]["steps"]:
+    allergens = ", ".join(content["contains"]).lower()
+    for step in content["steps"]:
         line = ""
         name = step["title"]
         text = step["text"]
@@ -128,7 +128,7 @@ def show_recipe(content):
             line = f"\n{name}"
         new_ingredient.append(line)
     ingredients = ";".join(new_ingredient).lower()
-    image_url = content[0]["img_url"]
+    image_url = content["img_url"]
     # ужасная f строка, но пока оставил так на первое время
     text = f"*_\n{recepi_name}_*\n*Меню:* {cousine} \n*Описание рецепта:* {recepi_description}\n*Ингредиенты:* {ingredients}\n*Калории:* {calories} Ккал\n*Аллергены:* {allergens}\n*Шаги:* {steps}"
     return text, image_url
