@@ -60,6 +60,12 @@ def build_menu(buttons, n_cols):
 
     return menu
 
+def single_button_menu(text, callback_data):
+    menu_buttons = [[
+        InlineKeyboardButton(text, callback_data=callback_data)
+    ]]
+    return InlineKeyboardMarkup(menu_buttons)
+
 
 def get_plural_for_person(amount):
     if amount > 20 or amount < 1:
