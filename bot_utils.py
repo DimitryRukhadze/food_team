@@ -40,15 +40,15 @@ def customize_menu(field, menu_names, cols=''):
     return reply_markup
 
 def customize_menu_2(subs, cols=''):
-    if not len(subs.keys())%2:
+    if not cols and not len(subs.keys())%2:
         cols = 2
-    else:
+    elif not cols:
         cols = 3
     menu_buttons = [
         InlineKeyboardButton(value, callback_data=key)
         for key, value in subs.items()
     ]
-    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=1))
+    reply_markup = InlineKeyboardMarkup(build_menu(menu_buttons, n_cols=cols))
     return reply_markup
 
 
