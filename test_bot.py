@@ -315,13 +315,19 @@ def save_promo(update:Update, context:CallbackContext):
     chat_id = update.effective_chat.id
 
     context.bot.delete_message(chat_id=chat_id, message_id=context.user_data['promo']['message_id'])
-    code = update.message.text.upper()
 
-    if code == 'PROMO10':
-        context.user_data['promo']['code'] = code
+    promo = foodapp_api.get_promo_api(update.message.text)
+    valid = (
+        promo and
+        (promo['cousine_type']=='ALL' 
+        or promo['cousine_type']==context.user_data['cousine_type'])
+    )
+    if valid:
+        context.user_data['promo']['code'] = promo["code"]
+        context.user_data['promo']['discount'] = promo["discount"]
         text = (
-            f'Ваш код - {code.upper()}\n'
-            f'10% скидки!'
+            f'Ваш код - {promo["code"]}\n'
+            f'Вы сможете получить {promo["discount"]}% скидки на Вашу подписку!'
         )
         reply_markup = single_button_menu('Использовать промокод', str(INVOICE))
     else:
@@ -368,9 +374,14 @@ def get_invoice(update:Update, context:CallbackContext):
     currency = "RUB"
 
     prices = [
-        LabeledPrice(f'Подписка на {selected_plan["name"]}', selected_plan['price'] * 100),
-        LabeledPrice(f'Промокод на 10 руб', -10 * 100)
+        LabeledPrice(f'Подписка на {selected_plan["name"]}', selected_plan['price'] * 100)
     ]
+
+    code = context.user_data['promo'].get('code')
+    if code:
+        discount_percent = context.user_data['promo'].get('discount')
+        discount = -(selected_plan['price'] // 100) * discount_percent
+        prices.append(LabeledPrice(f'Промокод {code}',  discount*100))
 
     update.callback_query.delete_message()
     invoice = context.bot.send_invoice(
