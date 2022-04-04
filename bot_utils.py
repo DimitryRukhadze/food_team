@@ -116,9 +116,9 @@ def show_recipe(recipe):
         f'\n<b><i>{recipe["name"]}</i></b>'
         f'\n<b>Меню:</b> {recipe["cousine_type"]}'
         f'\n<b>Описание рецепта:</b> {recipe_description}'
-        f'\n<b>Ингредиенты:</b> {ingredients_as_text}'
-        f'\n<b>Пищевая ценность:</b> {recipe["calories"]} Ккал'
+        f'\n\n<b>Пищевая ценность:</b> {recipe["calories"]} Ккал'
         f'\n<b>Содержит:</b> {allergens}'
-        f'\n<b>Как приготовить:</b> {steps_as_text}'
+        f'\n\n<b>Ингредиенты:</b> {ingredients_as_text}'
+        f'\n\n<b>Как приготовить:</b> {steps_as_text}'
     )
     return text, image_name
