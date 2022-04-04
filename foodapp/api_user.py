@@ -1,5 +1,4 @@
 import random
-from re import sub
 import time
 from datetime import datetime, timedelta
 from flask import Blueprint
@@ -93,6 +92,50 @@ def add_user_subscription_api(args):
     subscription_id = subscriptions.insert(new_plan)
     new_subcription = subscriptions.get(doc_id = subscription_id)
     return {'id': subscription_id, 'data': new_subcription}
+
+add_promo_args = {
+    'bot_token': fields.Str(required=True),
+    'code': fields.Str(required=True),
+    'cousine_type': fields.Str(missing='ALL', validate=lambda val: val in REFERENCE['cousine_types']),
+    'discount': fields.Int(required=True)
+}
+
+@user_bp.route('/addPromo', methods=['POST'])
+@use_args(add_promo_args)
+def add_promo(args):
+    db = get_database()
+    promos = db.table(PROMO)
+
+    new_code = {
+        'code': args['code'].upper(),
+        'cousine_type': args['cousine_type'],
+        'discount': args['discount'],
+    }
+
+    promo_id = promos.insert(new_code)
+    new_promo = promos.get(doc_id = promo_id)
+
+    return {'id': promo_id, 'data': new_promo}
+
+
+get_promo_args = {
+    'bot_token': fields.Str(required=True),
+    'code': fields.Str(required=True)
+}
+
+@user_bp.route('/getPromo', methods=['POST'])
+@use_args(get_promo_args)
+def get_promo(args):
+    db = get_database()
+    promos = db.table(PROMO)
+
+    promo = promos.get(Query()['code'] == args['code'].upper())
+    if promo:
+        result = {'id': promo.doc_id, 'data': promo}
+    else:
+        result = {'id': -1}
+
+    return result
 
 
 @user_bp.route('/getSubscriptions', methods=['POST'])

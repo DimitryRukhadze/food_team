@@ -23,8 +23,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
-SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(3, 11)
-REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(11, 15)
+REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(3, 7)
+SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, PROMO, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(7, 16)
 
 
 
@@ -142,8 +142,7 @@ def give_user_recipe(update, context):
     context.bot.send_message(
         chat_id=chat_id, 
         text=text, 
-        parse_mode=ParseMode.HTML,
-        reply_markup=single_button_menu('Вернуться в меню', str(START))
+        parse_mode=ParseMode.HTML
         )
 
     return ConversationHandler.END
@@ -291,9 +290,61 @@ def get_plan(update: Update, context: CallbackContext):
     return INVOICE
 
 
+def get_promo(update:Update, context:CallbackContext):
+    if not context.user_data.get('promo'):
+        context.user_data['plan'] = update.callback_query.data
+
+    chat_id = update.effective_chat.id
+    update.callback_query.delete_message()
+
+    message = context.bot.send_message(
+        chat_id=chat_id,
+        text=(
+            'Введите промокод для получения скидки.\n'
+            'Если у Вас не промокода, просто нажмите продолжить.'
+        ),
+        reply_markup=single_button_menu('Продолжить без промокода', str(INVOICE))
+    )
+
+    context.user_data['promo'] = {'message_id':message.message_id}
+
+    return INVOICE
+
+
+def save_promo(update:Update, context:CallbackContext):
+    chat_id = update.effective_chat.id
+
+    context.bot.delete_message(chat_id=chat_id, message_id=context.user_data['promo']['message_id'])
+    code = update.message.text.upper()
+
+    if code == 'PROMO10':
+        context.user_data['promo']['code'] = code
+        text = (
+            f'Ваш код - {code.upper()}\n'
+            f'10% скидки!'
+        )
+        reply_markup = single_button_menu('Использовать промокод', str(INVOICE))
+    else:
+        text = (
+            f'Промокод введен неверно либо не подходит для данного вида подписки.\n'
+            f'Вы можете попробовать ввести другой код, либо продолжить без промокода.'
+        )
+        reply_markup = single_button_menu('Продолжить без промокода', str(INVOICE))
+
+    message = context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=reply_markup
+    )
+
+    context.user_data['promo']['message_id']=message.message_id
+
+    return INVOICE
+
+
 def get_invoice(update:Update, context:CallbackContext):
     for plan in context.bot_data['plans']:
-        if plan['name'] in update.callback_query.data:
+        if plan['name'] in context.user_data['plan']:
             selected_plan = plan
             
     context.user_data['plan_duration'] = selected_plan['duration']
@@ -316,7 +367,10 @@ def get_invoice(update:Update, context:CallbackContext):
     provider_token = os.getenv('YUKASSA_TOKEN')
     currency = "RUB"
 
-    prices = [LabeledPrice(f'Подписка на {selected_plan["name"]}', selected_plan['price'] * 100)]
+    prices = [
+        LabeledPrice(f'Подписка на {selected_plan["name"]}', selected_plan['price'] * 100),
+        LabeledPrice(f'Промокод на 10 руб', -10 * 100)
+    ]
 
     update.callback_query.delete_message()
     invoice = context.bot.send_invoice(
@@ -523,7 +577,11 @@ if __name__ == "__main__":
                 CallbackQueryHandler(get_plan, pattern='^allergies:Продолжить$'),
                 CallbackQueryHandler(get_allergies)
                 ],
-            INVOICE: [CallbackQueryHandler(get_invoice)],
+            INVOICE: [
+                CallbackQueryHandler(get_invoice, pattern=f'^{str(INVOICE)}$'),
+                CallbackQueryHandler(get_promo),
+                MessageHandler(Filters.text & ~Filters.command, save_promo)
+                ],
             RECIPE: [CallbackQueryHandler(give_user_recipe)]
         },
         fallbacks=[

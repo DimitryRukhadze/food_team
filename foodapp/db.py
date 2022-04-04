@@ -7,6 +7,7 @@ from tinydb import TinyDB
 USER = 'USER'
 SUBSCRIPTION = 'SUBSCRIPTION'
 RECIPE = 'RECIPE'
+PROMO = 'PROMO'
 
 
 REFERENCE = {

@@ -113,6 +113,45 @@ def get_recipe(sub_id):
     return response.json()['recipe']
 
 
+def add_promo_api(code, discount, cousine_type=None):
+    '''Add promocode to the database'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/addPromo')
+
+    headers = {'Content-Type': 'application/json'}
+    json_data = {
+        'bot_token':'123',
+        'code': code,
+        'discount': discount
+    }
+    if(cousine_type):
+        json_data['cousine_type'] = cousine_type
+
+    response = requests.post(url, headers=headers, json=json_data)
+    response.raise_for_status()
+
+    return response.json()['data']
+
+
+def get_promo_api(code):
+    '''Check if promocode is valid'''
+
+    host_address = os.getenv('APP_HOST', 'http://127.0.0.1:5000')
+    url = urljoin(host_address, 'api/getPromo')
+
+    headers = {'Content-Type': 'application/json'}
+    json_data = {
+        'bot_token':'123',
+        'code': code
+    }
+
+    response = requests.post(url, headers=headers, json=json_data)
+    response.raise_for_status()
+
+    return response.json().get('data')
+
+
 def get_image_from_server(img_name):
     '''Get image from server directory'''
 
@@ -123,7 +162,7 @@ def get_image_from_server(img_name):
     response.raise_for_status()
 
     return response.content
-    
+
 
 def main():
     pass
