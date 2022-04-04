@@ -143,6 +143,7 @@ def get_recipe_api(args):
     recipes = recipe_table.search(
         (Recipe.cousine_type == sub['cousine_type'])
         & (~ (Recipe.contains.any(sub['allergies'])))
+        & (Recipe.num_servings == sub['num_servings'])
         )
 
     print(args['sub_id'], recipes)
