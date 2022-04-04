@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(8)
-REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(7, 11)
+REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(8, 12)
 
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
 
@@ -90,7 +90,6 @@ def show_subscriptions(update, context) -> None:
 
     if user_subscriptions:
         update.callback_query.delete_message()
-        # query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ')
 
         sub_info = {}
 
@@ -115,7 +114,10 @@ def show_subscriptions(update, context) -> None:
         return RECIPE
 
     else:
-        context.bot.send_message(text='Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.')
+        context.bot.send_message(
+            text='Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.',
+            reply_markup=single_button_menu('Вернуться в меню', str(START))
+            )
 
 
 def give_user_recipe(update, context):
@@ -140,8 +142,11 @@ def give_user_recipe(update, context):
     context.bot.send_message(
         chat_id=chat_id, 
         text=text, 
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
+        reply_markup=single_button_menu('Вернуться в меню', str(START))
         )
+
+    return ConversationHandler.END
 
 
 def get_menu_type(update, context):
@@ -377,17 +382,11 @@ def query_subscription(update: Update, context: CallbackContext):
         )
     else:
         text = 'Что-то пошло не так... попробуйте повторить попытку позже!\nВы можете вернуться в главное меню командой /start'
-    
-
-    menu_buttons = [[
-        InlineKeyboardButton('Вернуться в меню', callback_data=str(START))
-    ]]
-    reply_markup = InlineKeyboardMarkup(menu_buttons)
 
     context.bot.send_message(
         chat_id=chat_id,
         text=text,
-        reply_markup=reply_markup
+        reply_markup=single_button_menu('Вернуться в меню', str(START))
     )
     
 
