@@ -380,7 +380,7 @@ def get_invoice(update:Update, context:CallbackContext):
     code = context.user_data['promo'].get('code')
     if code:
         discount_percent = context.user_data['promo'].get('discount')
-        discount = -(selected_plan['price'] // 100) * discount_percent
+        discount = -int((selected_plan['price'] / 100) * discount_percent)
         prices.append(LabeledPrice(f'Промокод {code}',  discount*100))
 
     update.callback_query.delete_message()
