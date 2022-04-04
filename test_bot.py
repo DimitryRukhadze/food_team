@@ -89,25 +89,33 @@ def show_subscriptions(update, context) -> None:
         user_subscriptions = []
 
     if user_subscriptions:
-        query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ')
+        update.callback_query.delete_message()
+        # query.edit_message_text(text='Выберите подписку, по которой хотите блюдо: ')
 
         sub_info = {}
 
         for sub in user_subscriptions:
             sub_id = sub['id']
-            sub_stats = f"{sub['cousine_type']}, {sub['num_servings']} блюдо(а) на {sub['num_persons']} человек(а)"
+            sub_stats = (
+                f'{sub["cousine_type"]}, '
+                f'по {get_plural_for_servings(sub["num_servings"])} '
+                f'на {get_plural_for_person(sub["num_persons"])}\n'
+            )
 
             sub_info[sub_id] = sub_stats
-        print(sub_info)
         sub_markups = customize_menu_2(sub_info, cols=1)
 
-        context.bot.send_message(chat_id=chat_id, text='Ваши подписки', reply_markup=sub_markups)
+        context.bot.send_message(
+            chat_id=chat_id, 
+            text='Выберите подписку, по которой хотите блюдо: ', 
+            reply_markup=sub_markups
+            )
 
 
         return RECIPE
 
     else:
-        query.edit_message_text(text="Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.")
+        context.bot.send_message(text='Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.')
 
 
 def give_user_recipe(update, context):
@@ -117,6 +125,8 @@ def give_user_recipe(update, context):
     text, image_name = show_recipe(recipe)
 
     recipe_image = foodapp_api.get_image_from_server(image_name)
+
+    update.callback_query.delete_message()
 
     context.bot.send_message(
         chat_id=chat_id, 
@@ -291,15 +301,13 @@ def get_invoice(update:Update, context:CallbackContext):
         if context.user_data["allergies"] else 'Нет'
     )
     invoice_description = (
-        f'Тип меню: {context.user_data["cousine_type"]}\n'
-        f'Количество персон: {context.user_data["num_persons"]}\n'
-        f'Количество порций: {context.user_data["num_servings"]}\n'
-        f'Выбранные аллергии: {allergies_chosen}\n'
-        f'Срок подписки (месяцев): {context.user_data["plan_duration"]} \n'
-        f'\n'
-        f'Выберите аллергии или нажмите продолжить:'
+        f'Тип меню: {context.user_data["cousine_type"]}'
+        f' {context.user_data["num_persons"]} x'
+        f' {context.user_data["num_servings"]}'
+        f'\n Исключить: {allergies_chosen}'
+        f'\nСрок подписки (месяцев): {context.user_data["plan_duration"]}'
     )
-    invoice_payload = "TEST-PAYLOAD"
+    invoice_payload = f'SUB_FOR_{chat_id}'
     provider_token = os.getenv('YUKASSA_TOKEN')
     currency = "RUB"
 
@@ -323,8 +331,10 @@ def get_invoice(update:Update, context:CallbackContext):
 
 def get_checkout(update: Update, context: CallbackContext):
     query = update.pre_checkout_query
+    
+    invoice_id, invoice_chat_id = context.user_data['invoice']
 
-    if query.invoice_payload != 'TEST-PAYLOAD':
+    if query.invoice_payload != f'SUB_FOR_{invoice_chat_id}':
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Что-то пошло не так...")
     else:
