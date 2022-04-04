@@ -22,10 +22,11 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(8)
-REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(8, 12)
-
 START, MY_SUBSCRIPTIONS, SUBSCRIBE = range(3)
+SHOW_SUB_OR_MENU, NUM_PERSONS, NUM_MEALS, ALLERGY_OR_PLAN, INVOICE, CHECKOUT, QUERY_SUBSCRIPTION, RECIPE = range(3, 11)
+REGISTER, FIRSTNAME, LASTNAME, CONTACT = range(11, 15)
+
+
 
 
 def reset_user_input(update: Update, context: CallbackContext):
@@ -55,9 +56,7 @@ def start(update: Update, context: CallbackContext):
             "нам с Вами надо как следует познакомиться.\nГотовы начать?"
         )
 
-        reply_markup = InlineKeyboardMarkup([[
-            InlineKeyboardButton(text='Начать регистрацию', callback_data=str(REGISTER))
-        ]])
+        reply_markup = single_button_menu('Начать регистрацию', str(REGISTER))
     else:
         user_data = user['data']
         text = (
@@ -82,6 +81,7 @@ def start(update: Update, context: CallbackContext):
 def show_subscriptions(update, context) -> None:
     chat_id = update.effective_chat.id
     query = update.callback_query
+    query.delete_message()
 
     try:
         user_subscriptions = foodapp_api.get_subscriptions_api(chat_id)
@@ -89,8 +89,6 @@ def show_subscriptions(update, context) -> None:
         user_subscriptions = []
 
     if user_subscriptions:
-        update.callback_query.delete_message()
-
         sub_info = {}
 
         for sub in user_subscriptions:
@@ -115,9 +113,11 @@ def show_subscriptions(update, context) -> None:
 
     else:
         context.bot.send_message(
+            chat_id=chat_id,
             text='Подписок не найдено. Вернитесь в стартовое меню и оформите подписку.',
             reply_markup=single_button_menu('Вернуться в меню', str(START))
             )
+        return ConversationHandler.END
 
 
 def give_user_recipe(update, context):
@@ -464,19 +464,13 @@ def finish_registration(update: Update, context: CallbackContext):
             'Хм... что-то не сходится.\n'
             'Давайте вернемся к началу'
         )
-
-        reply_markup = InlineKeyboardMarkup([[
-            InlineKeyboardButton(text='Повторить регистрацию', callback_data=str(REGISTER))
-        ]])
+        reply_markup = single_button_menu('Повторить регистрацию', str(REGISTER))
     else:
         text = (
             'Приятно познакомиться!\n'
             'Теперь Вы можете оформить свою первую подписку.'
         )
-
-        reply_markup = InlineKeyboardMarkup([[
-            InlineKeyboardButton(text='Оформить подписку', callback_data=str(SUBSCRIBE))
-        ]])
+        reply_markup = single_button_menu('Оформить подписку', str(SUBSCRIBE))
 
     context.bot.send_message(
         chat_id=chat_id,
